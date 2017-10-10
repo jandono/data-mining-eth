@@ -179,11 +179,11 @@ def evaluate(reported_duplicates, true_duplicates):
             fn += 1
 
     logging.info("TP=%d, FP=%d, FN=%d", tp, fp, fn)
-    
+
     # If either precision or recall are zero, return zero.
     if (tp + fp == 0) or (tp + fn == 0):
         return 0
-    
+
     precision = 1.0 * tp / (tp + fp)
     recall = 1.0 * tp / (tp + fn)
     if precision + recall == 0:
@@ -224,10 +224,10 @@ def main():
     args = parser.parse_args()
     INPUT_PATTERN = "data/handout_shingles.txt"
     DUPLICATES = "data/handout_duplicates.txt"
-    
-    
+
+
     BATCH = 50
-    
+
     with open(args.source_file, "r") as fin:
         source = fin.read()
 
