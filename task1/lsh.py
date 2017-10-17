@@ -14,9 +14,6 @@ TARGET_SIMILARITY = 0.85
 TOTAL_SHINGLES = 8193
 LARGE_PRIME = 1000000007
 
-# NOTE: I think there is a mistake in Krause's slides: it seems that
-# a,b ~ Unif(0/1, p), not Unif(0/1, shingles_count).
-# Anyway, this did not change much.
 ass = np.array([random.randint(1, LARGE_PRIME - 1)
                 for _ in range(MAX_HASH_FNS)])
 bss = np.array([random.randint(0, LARGE_PRIME - 1)
@@ -37,7 +34,8 @@ def mapper(key, value):
 
     for b in range(BANDS_COUNT):
         bucket = hash(min_hashes[b * ROWS_COUNT : (b + 1) * ROWS_COUNT].data)
-        yield (str(bucket) + '_' + str(b)), (docid, min_hashes)
+        # yield (str(bucket) + '_' + str(b)), (docid, min_hashes)
+        yield (str(bucket) + '_' + str(b)), (docid, shingles)
 
 
 def reducer(key, values):
@@ -46,13 +44,12 @@ def reducer(key, values):
     values = sorted(values)
     for i in range(len(values)):
         for j in range(i + 1, len(values)):
-            doc1, min_hahes1 = values[i]
-            doc2, min_hahes2 = values[j]
-            # NOTE: From MMDS, p. 91:
-            #   6. Examine each candidate pair’s signatures and determine
-            #   whether the fraction of components in which they agree is at
-            #   least t.
-            emipiric_similarity = np.sum(min_hahes1 == min_hahes2) / \
-                                    len(min_hahes1) # MAX_HASH_FNS
-            if emipiric_similarity > TARGET_SIMILARITY:
+            doc1, shingles1 = values[i]
+            doc2, shingles2 = values[j]
+
+            # emipiric_similarity = np.sum(min_hahes1 == min_hahes2) / \
+            #                         len(min_hahes1) # MAX_HASH_FNS
+            jaccard_similarity = len(np.intersect1d(shingles1, shingles2)) / \
+                                    len(np.union1d(shingles1, shingles2))
+            if jaccard_similarity >= TARGET_SIMILARITY:
                 yield doc1, doc2
