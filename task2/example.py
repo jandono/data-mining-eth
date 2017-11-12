@@ -1,26 +1,28 @@
 from __future__ import division
 import numpy as np
-np.random.seed(1)
+# from sklearn.svm import SVC
 
 LAMBDA = 0.001
 B1 = 0.9
 B2 = 0.999
 EPSILON = 1e-7
-ALPHA = 0.001
+ALPHA = 0.01
 NEW_D = 10000
 D = 400
+
 
 
 def transform(X):
     # Make sure this function works for both 1D and 2D NumPy arrays.
     np.random.seed(0)
-    omegas = np.random.multivariate_normal(mean=np.zeros(D), cov=np.eye(D), size=NEW_D)
+    omegas = np.random.multivariate_normal(mean=np.zeros(D), cov=np.eye(D)/150, size=NEW_D)
+    # omegas = np.random.standard_cauchy((NEW_D, D))
     phases = np.random.uniform(0, 2 * np.pi, size=NEW_D)
 
     X = (X - np.mean(X, 0)) / np.std(X, 0)
-    # Z = np.sqrt(2.0 / NEW_D) * np.cos(np.dot(X, omegas.T) + phases)
+    Z = np.sqrt(2.0 / NEW_D) * np.cos(np.dot(X, omegas.T) + phases)
 
-    return X
+    return Z
 
 
 def rbf_kernel(x, y, sigma_s=1):
@@ -52,12 +54,18 @@ def mapper(key, value):
     X = transform(X)
     n = X.shape[0]
 
+    # svm = SVC()
+    # svm.fit(X, Y)
+    #
+    # print svm.score(X, Y)
+
     w = np.zeros(X.shape[1])
     w_hat = np.zeros(X.shape[1])
 
     m = np.zeros(X.shape[1])
     v = np.zeros(X.shape[1])
 
+    # for i in range(5):
     for t, x_t in enumerate(X):
         y_t = Y[t]
         t = t+1
@@ -72,11 +80,12 @@ def mapper(key, value):
             w -= ALPHA * m_hat / (np.sqrt(v_hat) + EPSILON)
             w = project_L2(w)
 
-            w_hat = (w_hat * (t - 1) + w)/t
+            w_hat = 0.8 * w_hat + 0.2 * w
 
     print np.sum((np.dot(X, w_hat) * Y) >= 0) / n
 
-    yield 1, w_hat # (w, X, Y)
+
+    yield 1, w_hat
 
 
 def reducer(key, values):
