@@ -6,8 +6,8 @@ LAMBDA = 0.001
 B1 = 0.9
 B2 = 0.999
 EPSILON = 1e-7
-ALPHA = 0.01
-NEW_D = 10000
+ALPHA = 0.05
+NEW_D = 15000
 D = 400
 
 
@@ -78,14 +78,14 @@ def mapper(key, value):
             v_hat = v / (1 - (B2 ** t))
 
             w -= ALPHA * m_hat / (np.sqrt(v_hat) + EPSILON)
-            w = project_L2(w)
+            # w = project_L2(w)
 
-            w_hat = 0.8 * w_hat + 0.2 * w
+            # w_hat = 0.8 * w_hat + 0.2 * w
+            # w_hat = ((t-1) * w_hat + w) / t
+    print np.sum((np.dot(X, w) * Y) >= 0) / n
 
-    print np.sum((np.dot(X, w_hat) * Y) >= 0) / n
 
-
-    yield 1, w_hat
+    yield 1, w
 
 
 def reducer(key, values):
