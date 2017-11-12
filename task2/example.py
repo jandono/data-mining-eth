@@ -5,27 +5,28 @@ np.random.seed(1)
 LAMBDA = 0.001
 B1 = 0.9
 B2 = 0.999
-epsilon = 1e-7
-alpha = 0.001
-new_d = 10000
-d = 400
+EPSILON = 1e-7
+ALPHA = 0.001
+NEW_D = 10000
+D = 400
 
-omegas = np.random.multivariate_normal(mean=np.zeros(d), cov=np.eye(d), size=new_d)
-phases = np.random.uniform(0, 2 * np.pi, size=new_d)
 
 def transform(X):
     # Make sure this function works for both 1D and 2D NumPy arrays.
-    print X.shape
+    np.random.seed(0)
+    omegas = np.random.multivariate_normal(mean=np.zeros(D), cov=np.eye(D), size=NEW_D)
+    phases = np.random.uniform(0, 2 * np.pi, size=NEW_D)
+
     X = (X - np.mean(X, 0)) / np.std(X, 0)
-    Z = np.sqrt(2.0 / new_d) * np.cos(np.dot(X, omegas.T) + phases)
+    # Z = np.sqrt(2.0 / NEW_D) * np.cos(np.dot(X, omegas.T) + phases)
 
-    return Z
+    return X
 
 
-# def transform(X):
-#     X = (X - np.mean(X, 0)) / np.std(X, 0)
-#     n = X.shape[0]
-#     d = X.shape[1]
+def rbf_kernel(x, y, sigma_s=1):
+
+    return np.exp(-(np.linalg.norm(x - y, 2) ** 2) / 2*sigma_s)
+
 
 def project_L2(w):
     return w * min(1, 1 / (np.sqrt(LAMBDA) * np.linalg.norm(w, 2)))
@@ -39,23 +40,23 @@ def permute(X, Y):
 def mapper(key, value):
     # key: None
     # value: one line of input file
-    global d
-    X = np.ndarray((len(value), d))
+    X = np.ndarray((len(value), D))
     Y = np.ndarray(len(value))
 
     for i, val in enumerate(value):
         parts = val.split()
         Y[i], X[i] = (int(float(parts[0])), map(float, parts[1:]))
 
-    X = transform(X)
-    n = X.shape[0]
-    d = X.shape[1]
-    w = np.zeros(d)
-
     X, Y = permute(X, Y)
 
-    m = np.zeros(d)
-    v = np.zeros(d)
+    X = transform(X)
+    n = X.shape[0]
+
+    w = np.zeros(X.shape[1])
+    w_hat = np.zeros(X.shape[1])
+
+    m = np.zeros(X.shape[1])
+    v = np.zeros(X.shape[1])
 
     for t, x_t in enumerate(X):
         y_t = Y[t]
@@ -68,16 +69,19 @@ def mapper(key, value):
             v = B2 * v + (1 - B2) * (g_t ** 2)
             v_hat = v / (1 - (B2 ** t))
 
-            w -= alpha * m_hat / (np.sqrt(v_hat) + epsilon)
+            w -= ALPHA * m_hat / (np.sqrt(v_hat) + EPSILON)
             w = project_L2(w)
 
-    print np.sum((np.dot(X, w) * Y) >= 0) / n
+            w_hat = (w_hat * (t - 1) + w)/t
 
-    yield 1, w
+    print np.sum((np.dot(X, w_hat) * Y) >= 0) / n
+
+    yield 1, w_hat # (w, X, Y)
 
 
 def reducer(key, values):
     # key: key from mapper used to aggregate
     # values: list of all value for that key
     # Note that we do *not* output a (key, value) pair here.
+
     yield np.average(values, 0)
