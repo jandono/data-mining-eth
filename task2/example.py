@@ -19,18 +19,17 @@ LAMBDA = 0.001
 
 # feature transformation params
 D = 400
-NEW_D = 25000
+NEW_D = 30000
 
 
 # random Fourier features params
 K_WIDTH = 200
-OMEGAS = np.random.multivariate_normal(mean=np.zeros(D), cov=np.eye(D)/K_WIDTH,
+OMEGAS = np.random.multivariate_normal(mean=np.zeros(D),
+                                       cov=np.eye(D)/K_WIDTH,
                                        size=NEW_D)
 PHASES = np.random.uniform(0, 2 * np.pi, size=NEW_D)
 
 def transform_(X):
-    # Make sure this function works for both 1D and 2D NumPy arrays.
-    np.random.seed(0)
     X = (X - np.mean(X, 0)) / np.std(X, 0)
     Z = np.sqrt(2.0 / NEW_D) * np.cos(np.dot(X, OMEGAS.T) + PHASES)
 
@@ -41,6 +40,13 @@ def transform_(X):
 INDICES = np.random.choice(np.arange((D * (D + 1)) // 2), size=NEW_D)
 
 def transform(X):
+    # make sure this function works with both 1D (including Python lists) and
+    # 2D arrays
+    if type(X) == list:
+        X = np.array(X)
+    if X.ndim == 1:
+        return np.outer(X, X).flatten()[INDICES]
+
     n = X.shape[0]
     Z = np.ndarray((n, NEW_D))
 
@@ -60,8 +66,6 @@ def permute(X, Y):
 
 
 def mapper(key, value):
-    # key: None
-    # value: one line of input file
     mapper_id = os.getpid()
 
     X = np.ndarray((len(value), D))
@@ -93,6 +97,7 @@ def mapper(key, value):
                 v_hat = v / (1 - (B2 ** t))
 
                 w -= ALPHA * m_hat / (np.sqrt(v_hat) + EPSILON)
+
         w_hat = W_WEIGHT * w + (1 - W_WEIGHT) * w_hat
         print 'Train accuracy (mapper {}, epoch {}): {}'.format(
                 mapper_id, i + 1, np.sum(np.dot(X, w_hat) * Y >= 0) / n)
@@ -101,7 +106,13 @@ def mapper(key, value):
 
 
 def reducer(key, values):
-    # key: key from mapper used to aggregate
-    # values: list of all value for that key
-    # Note that we do *not* output a (key, value) pair here.
     yield np.average(values, 0)
+
+
+# here we just make sure that our transform functions work for both 1D and 2D
+# arrays
+if __name__ == '__main__':
+    print transform(np.arange(D)).shape
+    print transform(np.arange(D).tolist()).shape
+    print transform_(np.arange(D)).shape
+    print transform_(np.arange(D).tolist()).shape
