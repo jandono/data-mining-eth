@@ -55,6 +55,32 @@ def transform(X):
 
     return Z
 
+def transform_poly(X, degree):
+    # make sure this function works with both 1D (including Python lists) and
+    # 2D arrays
+    if type(X) == list:
+        X = np.array(X)
+
+    X_poly = list()
+    for r in range(X.shape[0]):
+        row = X[r]
+        X_poly.append([])
+        X_poly[r].append(row)
+        for i in range(1, degree):
+            X_poly[r].append(np.ravel(np.outer(X_poly[r][i-1]), row))            
+
+        X_poly[r] = np.ravel(X_poly[r])
+
+    if X.ndim == 1:
+        return np.outer(X, X).flatten()[INDICES]
+
+    n = X.shape[0]
+    Z = np.ndarray((n, NEW_D))
+
+    for i, x in enumerate(X):
+        Z[i, :] = np.outer(x, x).flatten()[INDICES]
+
+    return Z
 
 def project_L2(w):
     return w * min(1, 1 / (np.sqrt(LAMBDA) * np.linalg.norm(w, 2)))
@@ -75,7 +101,6 @@ def mapper(key, value):
         parts = val.split()
         Y[i], X[i] = (int(float(parts[0])), map(float, parts[1:]))
 
-    X, Y = permute(X, Y)
     X = transform(X)
     n = X.shape[0]
 
@@ -85,6 +110,8 @@ def mapper(key, value):
     v = np.zeros(X.shape[1])
 
     for i in range(EPOCHS):
+        #Shuffle after every epoch
+        X, Y = permute(X, Y)
         for t, x_t in enumerate(X):
             y_t = Y[t]
             t = t+1
