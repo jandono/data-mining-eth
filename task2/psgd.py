@@ -100,13 +100,13 @@ def mapper(key, value):
 
     # do the feature transformation
     X = transform(X)
-    n = X.shape[1]
+    n, d = X.shape
 
     # prepare optimization (ADAM) specific variables
-    w = np.zeros(n)     # the SVM params
-    w_hat = np.zeros(n) # the across-epochs averaged SVM params
-    m = np.zeros(n)     # Nesterov's momentum
-    v = np.zeros(n)     # AdaGrad's learning rate decay factor
+    w = np.zeros(d)     # the SVM params
+    w_hat = np.zeros(d) # the across-epochs averaged SVM params
+    m = np.zeros(d)     # Nesterov's momentum
+    v = np.zeros(d)     # AdaGrad's learning rate decay factor
 
     for i in range(EPOCHS):
         # shuffle after every epoch
