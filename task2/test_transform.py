@@ -1,26 +1,11 @@
 import numpy as np
-# from sklearn import *
+from sklearn.feature_selection import SelectKBest, f_classif
 
-def transform_poly(X, degree):
-	# make sure this function works with both 1D (including Python lists) and
-	# 2D arrays
-	if type(X) == list:
-		X = np.array(X)
+np.random.seed(0)
 
-	NEW_X = np.ndarray(X.shape[0], dtype=list)  	
-	X_poly = np.ndarray((X.shape[0], degree), dtype=np.ndarray)
-	for r in range(X.shape[0]):
-		print r	
-		row = X[r]
-		X_poly[r][0] = np.array(row)
-
-		for i in range(1, degree):
-			X_poly[r][i] = np.ravel(np.outer(X_poly[r][i-1], row))
-	
-		NEW_X[r] = np.concatenate(X_poly[r]).tolist()
-
-	return np.array(NEW_X)
-
+D = 400
+NEW_D = 30000
+INDICES = np.random.choice(np.arange((D * (D + 1)) // 2), size=NEW_D)
 
 def transform(X):
     # make sure this function works with both 1D (including Python lists) and
@@ -28,33 +13,49 @@ def transform(X):
     if type(X) == list:
         X = np.array(X)
     if X.ndim == 1:
-        return np.outer(X, X).flatten()[INDICES]
+        return np.outer(X, X).flatten()
 
     n = X.shape[0]
-    Z = np.ndarray((n, NEW_D))
+    new_dim = X.shape[1] + X.shape[1]**2
+    Z = np.ndarray((n, new_dim))
 
     for i, x in enumerate(X):
-        Z[i, :] = np.outer(x, x).flatten()[INDICES]
+        if i % 100 == 0:
+            print i
+        Z[i, :] = np.append(x, np.outer(x, x).flatten())
 
     return Z
 
 
 f = open('data/handout_train.txt', 'r')
 
-X = [] 
+X = []
 Y = []
 for line in f:
-	parts = line.split()
-	for i in range(len(parts)):
-		parts[i] = float(parts[i])
-	X.append(parts[1:])
-	Y.append(parts[0])
+    parts = line.split()
+    for i in range(len(parts)):
+        parts[i] = float(parts[i])
+    X.append(parts[1:])
+    Y.append(parts[0])
+
+print 'File loaded!'
 
 X = np.array(X)
 Y = np.array(Y)
 
-transform_poly(X, 2)
-print 'Success'
+X = transform(X)
+print 'Data transformed!'
 
-# x = np.array([[1,2,3],[4,5,6]])
-# print transform_poly(x, 3)
+feature_selector = SelectKBest(score_func=f_classif, k=30000)
+feature_selector.fit(X, Y)
+X = feature_selector.transform(X)
+features = feature_selector.get_support(True)
+
+f = open('data/features.txt', 'w')
+
+f.write('INDICES = [')
+for i, feature in enumerate(features):
+    if i==0:
+        f.write(str(feature))
+    else:
+        f.write(', ' + str(feature))
