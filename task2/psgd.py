@@ -21,28 +21,38 @@ LAMBDA = 0.001
 D = 400
 NEW_D = 37000
 
-# # random Fourier features params
-# K_WIDTH = 200
-# OMEGAS = np.random.multivariate_normal(mean=np.zeros(D),
-#                                        cov=np.eye(D)/K_WIDTH,
-#                                        size=NEW_D)
-# PHASES = np.random.uniform(0, 2 * np.pi, size=NEW_D)
-#
-# def transform_(X):
-#     X = (X - np.mean(X, 0)) / np.scalctd(X, 0)
-#     Z = np.sqrt(2.0 / NEW_D) * np.cos(np.dot(X, OMEGAS.T) + PHASES)
-#
-#     return Z
+
+###############################################################################
+# APPROACH 1: Random Fourier Features
+
+# params
+K_WIDTH = 200  # controls the RBF width (usually `gamma')
+OMEGAS = np.random.multivariate_normal(mean=np.zeros(D),
+                                       cov=np.eye(D)/K_WIDTH,
+                                       size=NEW_D)
+PHASES = np.random.uniform(0, 2 * np.pi, size=NEW_D)
+
+# transformation function
+def transform_(X):
+    """Generates features constructed from samples drawn from the frequency
+    representation of the RBF kernel.
+    """
+    X = (X - np.mean(X, 0)) / np.std(X, 0)
+    Z = np.sqrt(2.0 / NEW_D) * np.cos(np.dot(X, OMEGAS.T) + PHASES)
+
+    return Z
+
+###############################################################################
 
 
-# higher-dimensional mapping params
-INDICES = np.random.choice(np.arange((D * (D + 1)) // 2), size=NEW_D)
+###############################################################################
+# APPROACH 2: Second-order polynomial features
 
 def transform(X):
+    """Transforms to the first `NEW_D' second-order polynomial components.
+    """
     # make sure this function works with both 1D (including Python lists) and
     # 2D arrays
-    # X = (X - np.mean(X, 0)) / np.std(X, 0)
-
     if type(X) == list:
         X = np.array(X)
     if X.ndim == 1:
@@ -51,17 +61,28 @@ def transform(X):
     n = X.shape[0]
     Z = np.ndarray((n, NEW_D))
     for i, x in enumerate(X):
-        # Z[i, :] = np.append(x, np.outer(x, x).flatten()[:NEW_D])
         Z[i, :] = np.outer(x, x).flatten()[:NEW_D]
 
     return Z
 
+###############################################################################
+
 
 def project_L2(w):
+    """Projects the given w vector on the feasible set determined by the
+    hyper-parameter LAMBDA.
+
+    NOTE: This function is not used in the final version as the validation gave
+    better results when the parameters of the models were not projected back to
+    the feasible set.
+    """
     return w * min(1, 1 / (np.sqrt(LAMBDA) * np.linalg.norm(w, 2)))
 
 
 def permute(X, Y):
+    """Randomly permutes the given data set (both the explanatory and the
+    response variables).
+    """
     perm = np.random.permutation(X.shape[0])
     return X[perm, :], Y[perm]
 
@@ -69,6 +90,7 @@ def permute(X, Y):
 def mapper(key, value):
     mapper_id = os.getpid()
 
+    # get the Xs and Ys from the given subset
     X = np.ndarray((len(value), D))
     Y = np.ndarray(len(value))
 
@@ -76,19 +98,23 @@ def mapper(key, value):
         parts = val.split()
         Y[i], X[i] = (int(float(parts[0])), map(float, parts[1:]))
 
+    # do the feature transformation
     X = transform(X)
+    n = X.shape[1]
 
-    w = np.zeros(X.shape[1])
-    w_hat = np.zeros(X.shape[1])
-    m = np.zeros(X.shape[1])
-    v = np.zeros(X.shape[1])
+    # prepare optimization (ADAM) specific variables
+    w = np.zeros(n)     # the SVM params
+    w_hat = np.zeros(n) # the across-epochs averaged SVM params
+    m = np.zeros(n)     # Nesterov's momentum
+    v = np.zeros(n)     # AdaGrad's learning rate decay factor
 
     for i in range(EPOCHS):
-        #Shuffle after every epoch
+        # shuffle after every epoch
         X, Y = permute(X, Y)
-        for t, x_t in enumerate(X):
-            y_t = Y[t]
-            t = t+1
+
+        # go through one point at a time (SGD)
+        for t, (x_t, y_t) in enumerate(zip(X, Y)):
+            t = t + 1
 
             if np.dot(x_t, w) * y_t < 1:
                 g_t = -y_t * x_t
@@ -98,15 +124,23 @@ def mapper(key, value):
                 v_hat = v / (1 - (B2 ** t))
 
                 w -= ALPHA * m_hat / (np.sqrt(v_hat) + EPSILON)
+            # if it is not misclassified, the gradient is 0 and there is
+            # nothing else to do
 
+        # update the across-epochs SVM params
         w_hat = W_WEIGHT * w + (1 - W_WEIGHT) * w_hat
-        # print 'Train accuracy (mapper {}, epoch {}): {}'.format(
-        #         mapper_id, i + 1, np.sum(np.dot(X, w_hat) * Y >= 0) / n)
 
+        # trace output
+        print 'Train accuracy (mapper {}, epoch {}): {}'.format(
+                mapper_id, i + 1, np.sum(np.dot(X, w_hat) * Y >= 0) / n)
+
+    # our final parameters are given by the across-epochs aggregated params
     yield 1, w_hat
 
 
 def reducer(key, values):
+    # the reducer simply computes the average of the SVM params computed by
+    # mappers
     yield np.average(values, 0)
 
 
@@ -115,5 +149,5 @@ def reducer(key, values):
 if __name__ == '__main__':
     print transform(np.arange(D)).shape
     print transform(np.arange(D).tolist()).shape
-    # print transform_(np.arange(D)).shape
-    # print transform_(np.arange(D).tolist()).shape
+    print transform_(np.arange(D)).shape
+    print transform_(np.arange(D).tolist()).shape
