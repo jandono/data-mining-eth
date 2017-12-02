@@ -4,10 +4,12 @@ import numpy as np
 from sklearn.cluster.k_means_ import _k_init
 from sklearn.utils.extmath import row_norms
 
+
 DIM = 250
 K = 200
-ALPHA = 0.75
-CORESET_SIZE = 400
+ALPHA = 16 * (np.log(K) + 2)
+CORESET_SIZE = 3000
+
 
 def kmeans_loss(X, centers):
     total_loss = 0
@@ -17,14 +19,14 @@ def kmeans_loss(X, centers):
     return total_loss
 
 
-def get_initial_centers(X, n_clusters, init_type='k-means++'):
+def get_initial_centers(X, init_type='k-means++'):
     if init_type == 'random':
         return X[np.random.choice(X.shape[0], K, replace=False)]
 
     assert init_type == 'k-means++'
     # centers = [X[np.random.randint(X.shape[0])]]
 
-    # for i in range(SUMMARY_COUNT - 1):
+    # for i in range(K - 1):
     #     print('Sampled {} centers'.format(i))
 
     #     centers_arr = np.array(centers)
@@ -36,11 +38,11 @@ def get_initial_centers(X, n_clusters, init_type='k-means++'):
     #     centers.append(c)
 
     # return np.array(centers)
-    return _k_init(X, n_clusters, x_squared_norms=row_norms(X, squared=True),
+    return _k_init(X, K, x_squared_norms=row_norms(X, squared=True),
                    random_state=np.random.RandomState(42))
 
 
-def kmeans(X, n_clusters=SUMMARY_COUNT, n_init=1, max_iter=20):
+def kmeans(X, n_init=1, max_iter=20, init_centers=None):
     best_centers = None
     best_loss = None
 
@@ -52,6 +54,7 @@ def kmeans(X, n_clusters=SUMMARY_COUNT, n_init=1, max_iter=20):
         else:
             centers = get_initial_centers(X)
 
+        clusters = [[] for _ in range(K)]
         for iter in range(max_iter):
             print('Running iteration {}'.format(iter))
             # assign data points to clusters
@@ -73,7 +76,6 @@ def kmeans(X, n_clusters=SUMMARY_COUNT, n_init=1, max_iter=20):
 
 
 def coreset_construction(X):
-
     n = X.shape[0]
     centers = get_initial_centers(X)
 
@@ -122,7 +124,7 @@ def mapper(key, value):
     # key: None
     # value: one line of input file
 
-    yield 0, coreset_construction(value)
+    yield 0, value # coreset_construction(value)
 
 
 def reducer(key, values):
@@ -131,4 +133,4 @@ def reducer(key, values):
     # Note that we do *not* output a (key, value) pair here.
     coreset = coreset_construction(np.array(values))
 
-    yield kmeans(coreset, n_init=1, max_iter=20)
+    yield kmeans(coreset, n_init=2, max_iter=100)
