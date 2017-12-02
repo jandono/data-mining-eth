@@ -1,6 +1,9 @@
 import numpy as np
 import os
 
+from sklearn.cluster.k_means_ import _k_init
+from sklearn.utils.extmath import row_norms
+
 DIM = 250
 SUMMARY_COUNT = 200
 
@@ -13,40 +16,42 @@ def kmeans_loss(X, centers):
     return total_loss
 
 
-def get_initial_centers(X, init_type='k-means++'):
+def get_initial_centers(X, n_clusters, init_type='k-means++'):
     if init_type == 'random':
         return X[np.random.choice(X.shape[0], SUMMARY_COUNT, replace=False)]
 
     assert init_type == 'k-means++'
-    centers = [X[42]]
+    # centers = [X[42]]
 
-    for i in range(SUMMARY_COUNT - 1):
-        # print('Sampled {} centers'.format(i))
+    # for i in range(SUMMARY_COUNT - 1):
+    #     print('Sampled {} centers'.format(i))
 
-        centers_arr = np.array(centers)
-        distances = np.array(
-            [np.min(np.linalg.norm(centers_arr - x, axis=1) ** 2) for x in X])
-        probabilities = distances / np.sum(distances)
+    #     centers_arr = np.array(centers)
+    #     distances = np.array(
+    #         [np.min(np.linalg.norm(centers_arr - x, axis=1) ** 2) for x in X])
+    #     probabilities = distances / np.sum(distances)
 
-        c = X[np.random.choice(np.arange(X.shape[0]), p=probabilities)]
-        # TODO: Remove `new_center' from X.
-        centers.append(c)
+    #     c = X[np.random.choice(np.arange(X.shape[0]), p=probabilities)]
+    #     # TODO: Remove `new_center' from X.
+    #     centers.append(c)
 
-    return np.array(centers)
+    # return np.array(centers)
+    return _k_init(X, n_clusters, x_squared_norms=row_norms(X, squared=True),
+                   random_state=np.random.RandomState(42))
 
 
-def kmeans(X, n_clusters=SUMMARY_COUNT, n_init=10, max_iter=20):
+def kmeans(X, n_clusters=SUMMARY_COUNT, n_init=1, max_iter=20):
     best_centers = None
     best_loss = None
 
     for rep in range(n_init):
-        # print('Running repetition {}'.format(rep))
+        print('Running repetition {}'.format(rep))
         # initialize cluster centers
-        centers = get_initial_centers(X)
+        centers = get_initial_centers(X, n_clusters=n_clusters)
 
-        clusters = [[] for _ in range(SUMMARY_COUNT)]
+        clusters = [[] for _ in range(n_clusters)]
         for iter in range(max_iter):
-            # print('Running iteration {}'.format(iter))
+            print('Running iteration {}'.format(iter))
             # assign data points to clusters
             for x in X:
                 c = np.argmin(np.linalg.norm(centers - x, axis=1))
