@@ -1,14 +1,14 @@
 from __future__ import division
 import numpy as np
 
-from sklearn.cluster.k_means_ import _k_init
-from sklearn.utils.extmath import row_norms
-
+# from sklearn.cluster.k_means_ import _k_init
+# from sklearn.utils.extmath import row_norms
+# from sklearn.cluster import KMeans
 
 DIM = 250
 K = 200
 ALPHA = 16 * (np.log(K) + 2)
-CORESET_SIZE = 3000
+CORESET_SIZE = 10000
 
 
 def kmeans_loss(X, centers):
@@ -24,27 +24,35 @@ def get_initial_centers(X, init_type='k-means++'):
         return X[np.random.choice(X.shape[0], K, replace=False)]
 
     assert init_type == 'k-means++'
-    # centers = [X[np.random.randint(X.shape[0])]]
 
-    # for i in range(K - 1):
-    #     print('Sampled {} centers'.format(i))
+    centers = [X[np.random.randint(X.shape[0])]]
+    distances = None
+    choice_array = np.arange(X.shape[0])
+    for i in range(K - 1):
+        print('Sampled {} centers'.format(i))
+        distance_new_center = [(np.linalg.norm(np.array(centers[i]) - x) ** 2) for x in X]
 
-    #     centers_arr = np.array(centers)
-    #     distances = np.array(
-    #         [np.min(np.linalg.norm(centers_arr - x, axis=1) ** 2) for x in X])
-    #     probabilities = distances / np.sum(distances)
-    #     c = X[np.random.choice(np.arange(X.shape[0]), p=probabilities)]
-    #     # TODO: Remove `new_center' from X.
-    #     centers.append(c)
+        if distances is None:
+            distances = distance_new_center
+        else:
+            distances = np.minimum(distances, distance_new_center)
 
-    # return np.array(centers)
-    return _k_init(X, K, x_squared_norms=row_norms(X, squared=True),
-                   random_state=np.random.RandomState(42))
+        sum_distances = np.sum(distances)
+        probabilities = distances / sum_distances
+        c = X[np.random.choice(choice_array, p=probabilities)]
+        # TODO: Remove `new_center' from X.
+        centers.append(c)
+
+    return np.array(centers)
+    # return _k_init(X, K, x_squared_norms=row_norms(X, squared=True),
+    #                random_state=np.random.RandomState(42))
 
 
 def kmeans(X, n_init=1, max_iter=20, init_centers=None):
     best_centers = None
     best_loss = None
+
+    N = X.shape[0]
 
     for rep in range(n_init):
         print('Running repetition {}'.format(rep))
@@ -55,21 +63,38 @@ def kmeans(X, n_init=1, max_iter=20, init_centers=None):
             centers = get_initial_centers(X)
 
         clusters = [[] for _ in range(K)]
+        prev_centers = None
         for iter in range(max_iter):
             print('Running iteration {}'.format(iter))
-            # assign data points to clusters
-            for x in X:
-                c = np.argmin(np.linalg.norm(centers - x, axis=1))
-                clusters[c].append(x)
 
-            # recalculate clusters
-            centers = np.array([np.mean(cluster, axis=0)
-                                for cluster in clusters])
+            # assign data points to clusters
+            z_kn = np.zeros((K, N))
+
+            for i, x in enumerate(X):
+                c = np.argmin(np.linalg.norm(centers - x, axis=1))
+                z_kn[c, i] = 1
+
+            for k in range(K):
+                centers[k] = np.dot(z_kn[k, :], X) / np.sum(z_kn[k, :])
+
+            # # assign data points to clusters
+            # for x in X:
+            #     c = np.argmin(np.linalg.norm(centers - x, axis=1))
+            #     clusters[c].append(x)
+            #
+            # # recalculate clusters
+            # centers = np.array([np.mean(cluster, axis=0) for cluster in clusters])
+
+            # if prev_centers is not None and np.array_equal(centers, prev_centers):
+            #     break
+
+            # prev_centers = centers
 
         curr_loss = kmeans_loss(X, centers)
         if best_loss is None or curr_loss < best_loss:
             best_centers = centers
             best_loss = curr_loss
+
 
     assert best_centers is not None
     return best_centers
@@ -131,6 +156,7 @@ def reducer(key, values):
     # key: key from mapper used to aggregate
     # values: list of all value for that key
     # Note that we do *not* output a (key, value) pair here.
+
     coreset = coreset_construction(np.array(values))
 
-    yield kmeans(coreset, n_init=2, max_iter=100)
+    yield kmeans(coreset, n_init=3, max_iter=20)
