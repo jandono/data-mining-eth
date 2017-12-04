@@ -1,5 +1,6 @@
 from __future__ import division
 import numpy as np
+from sklearn.cluster import k_means
 
 DIM = 250
 K = 200
@@ -141,7 +142,7 @@ def mapper(key, value):
     # key: None
     # value: one line of input file
 
-    yield 0, coreset_construction(np.array(value), CORESET_SIZE)
+    yield 0, value  # coreset_construction(np.array(value), CORESET_SIZE)
 
 
 def reducer(key, values):
@@ -149,6 +150,7 @@ def reducer(key, values):
     # values: list of all value for that key
     # Note that we do *not* output a (key, value) pair here.
 
-    coreset = coreset_construction(np.array(values), CORESET_SIZE)
+    # coreset = coreset_construction(np.array(values), CORESET_SIZE)
 
-    yield kmeans(values, n_init=1, max_iter=20)
+    # yield kmeans(values, n_init=1, max_iter=20)
+    yield k_means(values, n_clusters=K, max_iter=1000, init='k-means++')[0]
