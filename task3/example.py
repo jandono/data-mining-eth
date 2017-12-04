@@ -9,7 +9,7 @@ CORESET_SIZE = 2000
 def kmeans_loss(X, centers):
     total_loss = 0
     for x in X:
-        total_loss += np.min(np.linalg.norm(centers - x, axis=1) ** 2)
+        total_loss += np.min(np.linalg.norm(centers - x, ord=2, axis=1) ** 2)
 
     return total_loss
 
@@ -23,8 +23,9 @@ def get_initial_centers(X, init_type='k-means++'):
     centers = [X[np.random.randint(X.shape[0])]]
     distances = None
     for i in range(K - 1):
-        print('Sampled {} centers'.format(i))
-        distance_new_center = [(np.linalg.norm(np.array(centers[i]) - x) ** 2) for x in X]
+        #print('Sampled {} centers'.format(i))
+        distance_new_center = np.linalg.norm(-X + np.array(centers[i]), ord=2, axis=1) ** 2 
+        #distance_new_center = [(np.linalg.norm(np.array(centers[i]) - x, ord=2) ** 2) for x in X]
 
         if distances is None:
             distances = distance_new_center
@@ -73,7 +74,7 @@ def kmeans(X, n_init=1, max_iter=20, init_centers=None):
 
             # assign data points to clusters
             for x in X:
-                c = np.argmin(np.linalg.norm(centers - x, axis=1))
+                c = np.argmin(np.linalg.norm(centers - x, ord=2, axis=1))
                 clusters[c].append(x)
 
             # recalculate clusters
@@ -101,7 +102,7 @@ def coreset_construction(X, size, replace=False):
     min_distances = []
 
     for i, x in enumerate(X):
-        distances = np.linalg.norm(centers - x, axis=1)
+        distances = np.linalg.norm(centers - x, ord=2, axis=1)
 
         # For each x compute distances to the closest center
         min_distances.append(np.min(distances))
@@ -141,7 +142,8 @@ def mapper(key, value):
     # key: None
     # value: one line of input file
 
-    yield 0, coreset_construction(np.array(value), CORESET_SIZE)
+    #yield 0, coreset_construction(np.array(value), CORESET_SIZE)
+    yield 0, np.array(value)
 
 
 def reducer(key, values):
@@ -149,6 +151,6 @@ def reducer(key, values):
     # values: list of all value for that key
     # Note that we do *not* output a (key, value) pair here.
 
-    coreset = coreset_construction(np.array(values), CORESET_SIZE)
+    #coreset = coreset_construction(np.array(values), CORESET_SIZE)
 
     yield kmeans(values, n_init=1, max_iter=20)
