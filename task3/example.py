@@ -24,7 +24,7 @@ def get_initial_centers(X, init_type='k-means++'):
     distances = None
     for i in range(K - 1):
         #print('Sampled {} centers'.format(i))
-        distance_new_center = np.linalg.norm(-X + np.array(centers[i]), ord=2, axis=1) ** 2 
+        distance_new_center = np.linalg.norm(-X + np.array(centers[i]), ord=2, axis=1) ** 2
         #distance_new_center = [(np.linalg.norm(np.array(centers[i]) - x, ord=2) ** 2) for x in X]
 
         if distances is None:
