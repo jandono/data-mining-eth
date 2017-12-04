@@ -1,5 +1,6 @@
 from __future__ import division
 import numpy as np
+from scipy.spatial import distance
 
 DIM = 250
 K = 200
@@ -23,9 +24,12 @@ def get_initial_centers(X, init_type='k-means++'):
     centers = [X[np.random.randint(X.shape[0])]]
     distances = None
     for i in range(K - 1):
-        #print('Sampled {} centers'.format(i))
-        distance_new_center = np.linalg.norm(-X + np.array(centers[i]), ord=2, axis=1) ** 2
-        #distance_new_center = [(np.linalg.norm(np.array(centers[i]) - x, ord=2) ** 2) for x in X]
+        # print('Sampled {} centers'.format(i))
+        differences = np.array(centers[i]) - X
+
+        distance_new_center = np.linalg.norm(differences, ord=2, axis=1) ** 2
+
+        # distance_new_center = np.dot(differences, differences)
 
         if distances is None:
             distances = distance_new_center
@@ -57,33 +61,28 @@ def kmeans(X, n_init=1, max_iter=20, init_centers=None):
         else:
             centers = get_initial_centers(X)
 
-        clusters = [[] for _ in range(K)]
-        prev_centers = None
+        prev_labels = None
+        indices = np.arange(N)
         for iter in range(max_iter):
             # print('Running iteration {}'.format(iter))
 
-            # # assign data points to clusters
-            # z_kn = np.zeros((K, N))
-            #
-            # for i, x in enumerate(X):
-            #     c = np.argmin(np.linalg.norm(centers - x, axis=1))
-            #     z_kn[c, i] = 1
-            #
-            # for k in range(K):
-            #     centers[k] = np.dot(z_kn[k, :], X) / np.sum(z_kn[k, :])
-
             # assign data points to clusters
-            for x in X:
-                c = np.argmin(np.linalg.norm(centers - x, ord=2, axis=1))
-                clusters[c].append(x)
+            z_kn = np.zeros((K, N))
+            distances = distance.cdist(X, centers, 'euclidean')
+            labels = distances.argmin(axis=1)
 
-            # recalculate clusters
-            centers = np.array([np.mean(cluster, axis=0) for cluster in clusters])
-
-            if prev_centers is not None and np.array_equal(centers, prev_centers):
+            if np.array_equal(labels, prev_labels):
+                # print('early stopping')
                 break
 
-            prev_centers = centers
+            prev_labels = labels
+            z_kn[labels, indices] = 1
+
+
+            # recalculate centers
+            # centers = np.divide(np.dot(z_kn, X).T, np.sum(z_kn, axis=1)).T
+            centers = (np.dot(z_kn, X).T / np.sum(z_kn, axis=1)).T
+
 
         curr_loss = kmeans_loss(X, centers)
         if best_loss is None or curr_loss < best_loss:
@@ -142,8 +141,8 @@ def mapper(key, value):
     # key: None
     # value: one line of input file
 
-    #yield 0, coreset_construction(np.array(value), CORESET_SIZE)
-    yield 0, np.array(value)
+    yield 0, coreset_construction(np.array(value), CORESET_SIZE)
+    # yield 0, np.array(value)
 
 
 def reducer(key, values):
@@ -151,6 +150,6 @@ def reducer(key, values):
     # values: list of all value for that key
     # Note that we do *not* output a (key, value) pair here.
 
-    #coreset = coreset_construction(np.array(values), CORESET_SIZE)
+    # coreset = coreset_construction(np.array(values), CORESET_SIZE)
 
-    yield kmeans(values, n_init=1, max_iter=20)
+    yield kmeans(values, n_init=1, max_iter=100)
