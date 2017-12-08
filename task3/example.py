@@ -1,53 +1,65 @@
 from __future__ import division
 import numpy as np
-from scipy.spatial import distance
+from scipy.spatial.distance import cdist
 
 DIM = 250
 K = 200
 ALPHA = 16 * (np.log(K) + 2)
 CORESET_SIZE = 2000
 
-def kmeans_loss(X, centers):
-    total_loss = 0
-    for x in X:
-        total_loss += np.min(np.linalg.norm(centers - x, ord=2, axis=1) ** 2)
 
-    return total_loss
+def kmeans_loss(X, centers, distances=None):
+    """
+    Computes the kmeans loss, given data X and centers
+    Optionally it can get precomputed distances
+    """
+
+    if distances is None:
+        distances = cdist(X, centers, 'sqeuclidean')
+
+    loss = np.sum(np.min(distances, axis=1))
+    return loss
 
 
 def get_initial_centers(X, init_type='k-means++'):
+    """
+    Given data X calculates the initial centers
+    Two options available:
+        1. Sample centers uniformly at random
+        2. Sample centers using k-means++ initialisation
+    """
+
     if init_type == 'random':
         return X[np.random.choice(X.shape[0], K, replace=False)]
 
     assert init_type == 'k-means++'
 
     centers = [X[np.random.randint(X.shape[0])]]
+
     distances = None
     for i in range(K - 1):
         # print('Sampled {} centers'.format(i))
-        differences = np.array(centers[i]) - X
-
+        differences = centers[i] - X
         distance_new_center = np.linalg.norm(differences, ord=2, axis=1) ** 2
-
-        # distance_new_center = np.dot(differences, differences)
 
         if distances is None:
             distances = distance_new_center
         else:
             distances = np.minimum(distances, distance_new_center)
 
-        sum_distances = np.sum(distances)
-        probabilities = distances / sum_distances
+        probabilities = distances / np.sum(distances)
         cluster_index = np.random.choice(X.shape[0], p=probabilities)
         c = X[cluster_index]
-        X = np.delete(X, cluster_index, axis=0)
-        distances = np.delete(distances, cluster_index, axis=0)
         centers.append(c)
 
     return np.array(centers)
 
 
 def kmeans(X, n_init=1, max_iter=20, init_centers=None):
+    """
+    Applies the k-means algorithm to cluster data X into K centers
+    """
+
     best_centers = None
     best_loss = None
 
@@ -64,34 +76,38 @@ def kmeans(X, n_init=1, max_iter=20, init_centers=None):
         prev_labels = None
         indices = np.arange(N)
         for iter in range(max_iter):
-            # print('Running iteration {}'.format(iter))
+            print('Running iteration {}'.format(iter))
 
             # assign data points to clusters
-            z_kn = np.zeros((K, N))
-            distances = distance.cdist(X, centers, 'euclidean')
+            z_kn = np.zeros((K, N), dtype=np.bool)
+            distances = cdist(X, centers, 'sqeuclidean')
             labels = distances.argmin(axis=1)
 
             if np.array_equal(labels, prev_labels):
-                # print('early stopping')
+                print('early stopping at iteration {}'.format(iter))
                 break
 
             prev_labels = labels
             z_kn[labels, indices] = 1
 
-
             # recalculate centers
-            # centers = np.divide(np.dot(z_kn, X).T, np.sum(z_kn, axis=1)).T
-            centers = (np.dot(z_kn, X).T / np.sum(z_kn, axis=1)).T
+            centers = np.divide(np.dot(z_kn, X).T, np.sum(z_kn, axis=1)).T
+            # for c in range(K):
+            #     centers[c] = np.mean(X[labels == c], axis=0)
 
-
-        curr_loss = kmeans_loss(X, centers)
+        curr_loss = kmeans_loss(X, centers, distances=distances)
         if best_loss is None or curr_loss < best_loss:
             best_centers = centers
             best_loss = curr_loss
 
     return best_centers
 
+
 def kmedians(X, n_init=1, max_iter=20, init_centers=None):
+    """
+    Applies the k-medians algorithm to cluster data X into K centers
+    """
+
     best_centers = None
     best_loss = None
 
@@ -105,33 +121,23 @@ def kmedians(X, n_init=1, max_iter=20, init_centers=None):
         else:
             centers = get_initial_centers(X)
 
-        clusters = [[] for _ in range(K)]
-        prev_centers = None
+        prev_labels = None
         for iter in range(max_iter):
             # print('Running iteration {}'.format(iter))
 
-            # # assign data points to clusters
-            # z_kn = np.zeros((K, N))
-            #
-            # for i, x in enumerate(X):
-            #     c = np.argmin(np.linalg.norm(centers - x, axis=1))
-            #     z_kn[c, i] = 1
-            #
-            # for k in range(K):
-            #     centers[k] = np.dot(z_kn[k, :], X) / np.sum(z_kn[k, :])
-
             # assign data points to clusters
-            for x in X:
-                c = np.argmin(np.linalg.norm(centers - x, ord=1, axis=1))
-                clusters[c].append(x)
+            distances = cdist(X, centers, 'cityblock')
+            labels = distances.argmin(axis=1)
 
-            # recalculate clusters
-            centers = np.array([np.median(cluster, axis=0) for cluster in clusters])
-
-            if prev_centers is not None and np.array_equal(centers, prev_centers):
+            if np.array_equal(labels, prev_labels):
+                print('early stopping at iteration {}'.format(iter))
                 break
 
-            prev_centers = centers
+            prev_labels = labels
+
+            # recalculate clusters
+            for c in range(K):
+                centers[c] = np.median(X[labels == c], axis=0)
 
         curr_loss = kmeans_loss(X, centers)
         if best_loss is None or curr_loss < best_loss:
@@ -141,8 +147,11 @@ def kmedians(X, n_init=1, max_iter=20, init_centers=None):
     return best_centers
 
 
+def coreset_construction(X, coreset_size, replace=False):
+    """
+    Given data X returns a coreset of size coreset_size
+    """
 
-def coreset_construction(X, size, replace=False):
     n = X.shape[0]
     centers = get_initial_centers(X)
 
@@ -184,23 +193,25 @@ def coreset_construction(X, size, replace=False):
 
     q_x /= np.sum(q_x)
 
-    return X[np.random.choice(n, size, replace=replace, p=q_x)]
+    return X[np.random.choice(n, coreset_size, replace=replace, p=q_x)]
 
 
 def mapper(key, value):
-    # key: None
-    # value: one line of input file
+    """
+    The mapper can either yield a coreset of the data provided or yield the entire data
+    """
 
-    # yield 0, coreset_construction(np.array(value), CORESET_SIZE)
-    yield 0, np.array(value)
+    yield 0, coreset_construction(value, CORESET_SIZE)
+    # yield 0, value
 
 
 def reducer(key, values):
-    # key: key from mapper used to aggregate
-    # values: list of all value for that key
-    # Note that we do *not* output a (key, value) pair here.
+    """
+    Coreset construction can be used here as well to modify summarize the data provided
+    The reducer then runs either kmeans or kmedians on the data
+    """
 
     # coreset = coreset_construction(np.array(values), CORESET_SIZE)
 
-    yield kmeans(values, n_init=1, max_iter=100)
-    # yield kmedians(values, n_init=1, max_iter=20)
+    yield kmeans(values, n_init=2, max_iter=100)
+    # yield kmedians(values, n_init=2, max_iter=100)
