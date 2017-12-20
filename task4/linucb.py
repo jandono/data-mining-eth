@@ -1,5 +1,6 @@
 from __future__ import division
 
+from numpy.linalg import inv, multi_dot as mult
 import numpy as np
 
 
@@ -104,15 +105,15 @@ def update(reward):
 
     # lines 17-23 from Algorithm 2
     # TODO(ccruceru): cache the repeated matrix multiplications
-    A0 += B[at].T.dot(Ai[at]).dot(B[at])
-    b0 += B[at].T.dot(Ai[at]).dot(b[at])
+    A0 += mult([B[at].T, Ai[at], B[at]])
+    b0 += mult([B[at].T, Ai[at], b[at]])
     A[at] += np.outer(x, x.T)
-    Ai[at] = np.linalg.inv(A[at])
+    Ai[at] = inv(A[at])
     B[at] += np.outer(x, z.T)
     b[at] += reward * x
-    A0 += np.outer(z, z.T) - B[at].T.dot(Ai[at]).dot(B[at])
-    A0i = np.linalg.inv(A0)
-    b0 += reward * z - B[at].T.dot(Ai[at]).dot(b[at])
+    A0 += np.outer(z, z.T) - mult([B[at].T, Ai[at], B[at]])
+    A0i = inv(A0)
+    b0 += reward * z - mult([B[at].T, Ai[at], b[at]])
 
 
 def recommend(time, user_features, choices):
@@ -135,15 +136,15 @@ def recommend(time, user_features, choices):
     p_t = {}  # stores the CI upper bound of the prediction, for all choices
     for a in choices:
         # line 12
-        theta_hat = Ai[a].dot(b[a] - B[a].dot(beta_hat))
+        theta_hat = np.dot(Ai[a], b[a] - np.dot(B[a], beta_hat))
         # line 13
-        s_ta = Z_t[a].T.dot(A0i).dot(Z_t[a]) + \
-                - 2 * Z_t[a].T.dot(A0i).dot(B[a].T).dot(Ai[a]).dot(x) + \
-                + x.T.dot(Ai[a]).dot(x) + \
-                + x.T.dot(Ai[a]).dot(B[a]).dot(A0i).dot(B[a].T).dot(Ai[a]).dot(x)
+        s_ta = mult([Z_t[a].T, A0i, Z_t[a]]) + \
+                - 2 * mult([Z_t[a].T, A0i, B[a].T, Ai[a], x]) + \
+                + mult([x.T, Ai[a], x]) + \
+                + mult([x.T, Ai[a], B[a], A0i, B[a].T, Ai[a], x])
         # line 14
-        p_t[a] = Z_t[a].T.dot(beta_hat) + \
-                + x.T.dot(theta_hat) + \
+        p_t[a] = np.dot(Z_t[a].T, beta_hat) + \
+                + np.dot(x.T, theta_hat) + \
                 + ALPHA * np.sqrt(s_ta)
 
     # line 16: choose the best one according to the UCB approach
