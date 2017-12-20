@@ -81,7 +81,7 @@ def run(source, log_file, articles_file):
     policy.set_articles(articles)
     with io.open(log_file, 'rb', buffering=1024*1024*512) as inf:
         return evaluate(policy, inf)
-    
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
