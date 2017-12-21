@@ -117,7 +117,7 @@ def recommend(time, user_features, choices):
         # line 9
         p_t[a] = np.dot(theta_hat.T, x) + ALPHA * np.sqrt(mult([x.T, Ai[a], x]))
 
-    # line 16: choose the best one according to the UCB approach
+    # line 11: choose the best one according to the UCB approach
     at = max(p_t, key=p_t.get)
 
     return at

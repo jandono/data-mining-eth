@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy.linalg import inv, multi_dot as mult
+from numpy.linalg import inv
 import numpy as np
 
 
@@ -18,7 +18,7 @@ DELTA = 0.05
 # NOTE: it might make more sense to fine-tune directly this one, instead of
 # DELTA
 # ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
-ALPHA = 0.4
+ALPHA = 0.1
 
 # dimensionality of the `context' (i.e. user features)
 # it also happens to be the dimensionality of the article features, so we are
@@ -119,17 +119,34 @@ def update(reward):
     # if reward == 0:
     #     reward = -1
 
+    ################################
     # lines 17-23 from Algorithm 2
-    # TODO(ccruceru): cache the repeated matrix multiplications
-    A0 += mult([B[at].T, Ai[at], B[at]])
-    b0 += mult([B[at].T, Ai[at], b[at]])
+
+    # cache this product
+    B_T__Ai = np.dot(B[at].T, Ai[at])
+
+    # reuse it here...
+    A0 += np.dot(B_T__Ai, B[at])
+    # ...and here
+    b0 += np.dot(B_T__Ai, b[at])
+
+    # the following ones cannot be optimizd (maybe if reward is 0?)
     A[at] += np.outer(x, x.T)
     Ai[at] = inv(A[at])
     B[at] += np.outer(x, z.T)
     b[at] += reward * x
-    A0 += np.outer(z, z.T) - mult([B[at].T, Ai[at], B[at]])
+
+    # re-cache it here since they changed
+    B_T__Ai = np.dot(B[at].T, Ai[at])
+
+    # and use it here...
+    A0 += np.outer(z, z.T) - np.dot(B_T__Ai, B[at])
     A0i = inv(A0)
-    b0 += reward * z - mult([B[at].T, Ai[at], b[at]])
+    # ...and here
+    b0 += reward * z - np.dot(B_T__Ai, b[at])
+
+    # done
+    ################################
 
 
 def recommend(time, user_features, choices):
@@ -151,13 +168,28 @@ def recommend(time, user_features, choices):
     # lines 6 to 15: iterate through all actions (i.e. articles)
     p_t = {}  # stores the CI upper bound of the prediction, for all choices
     for a in choices:
+        ####################
         # line 12
         theta_hat = np.dot(Ai[a], b[a] - np.dot(B[a], beta_hat))
+
+        ####################
         # line 13
-        s_ta = mult([Z_t[a].T, A0i, Z_t[a]]) + \
-                - 2 * mult([Z_t[a].T, A0i, B[a].T, Ai[a], x]) + \
-                + mult([x.T, Ai[a], x]) + \
-                + mult([x.T, Ai[a], B[a], A0i, B[a].T, Ai[a], x])
+
+        # cache various repeated matrix multiplications
+        zt_T__A0i = np.dot(Z_t[a].T, A0i)
+        B_T__Ai = np.dot(B[a].T, Ai[a])
+        x_T__Ai = np.dot(x.T, Ai[a])
+
+        # compute each term separately, for clarity
+        term1 = np.dot(zt_T__A0i, Z_t[a])
+        term2 = -2 * zt_T__A0i.dot(B_T__Ai).dot(x)
+        term3 = x_T__Ai.dot(x)
+        term4 = x_T__Ai.dot(B[a]).dot(A0i).dot(B_T__Ai).dot(x)
+
+        # finally, add them up to get s_ta
+        s_ta = term1 + term2 + term3 + term4
+
+        ####################
         # line 14
         p_t[a] = np.dot(Z_t[a].T, beta_hat) + \
                 + np.dot(x.T, theta_hat) + \
