@@ -152,6 +152,8 @@ def update(reward):
 
 def recommend(time, user_features, choices):
     # TODO(ccruceru): do we need the time?
+    # TODO(ccruceru): to make this usable, try to run it only once in 5 calls,
+    # and in the remaining ones to use the disjoint LinUCB.
 
     # declare the global variables changed in this function
     global x, at, z
