@@ -11,14 +11,19 @@ import numpy as np
 # the desired probability threshold which controls how close to the true
 # conditional reward mean we want to be (i.e. E[r_{t,a} | x_{t,a}])
 # NOTE: fine-tune it!
-DELTA = 0.05
+DELTA = 0.01
 
-# constant (based on DELTA) which ensures the confidence bounds are correctly
-# computed by the algorithm
-# NOTE: it might make more sense to fine-tune directly this one, instead of
-# DELTA
-# ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
+# constant which controls the exploration/exploitation ratio
+#
+# in the proofs, this should normally be computed from DELTA, the desired
+# probability threshold for how close we are to the conditional reward
+# expectation, as follows:
+#
+#   ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
+#
+# but in practice it is tuned on its own.
 ALPHA = 0.1
+# ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
 
 # dimensionality of the `context' (i.e. user features)
 # it also happens to be the dimensionality of the article features, so we are
@@ -46,6 +51,11 @@ at = None
 # NOTE: it is initialized, together with all the following dicts, in the
 # `set_articles' function
 Z = {}
+
+# the timestamp to "time" map; we consider the events that take place at the
+# same timestamp as having the same time
+ts_to_time = {}
+last_time = 1
 
 # the matrices/vectors with the same name in the algorithm; there is one for
 # each article
@@ -103,7 +113,17 @@ def recommend(time, user_features, choices):
     # TODO(ccruceru): do we need the time?
 
     # declare the global variables changed in this function
-    global x, at
+    global ts_to_time, last_time, x, at
+
+    # map this timestamp to a time
+    if time not in ts_to_time:
+        ts_to_time[time] = last_time
+        last_time += 1
+
+    # compute ALPHA for this recommendation round
+    # TODO(ccruceru): this is an attempt to make it decay in time
+    # alpha = ALPHA * (1 + 1 / ts_to_time[time])
+    alpha = ALPHA
 
     # line 2: observing the features
     # NOTE: in the algorithm we have such an x for each articles; in our
@@ -116,7 +136,7 @@ def recommend(time, user_features, choices):
         # line 8
         theta_hat = np.dot(Ai[a], b[a])
         # line 9
-        p_t[a] = np.dot(theta_hat.T, x) + ALPHA * np.sqrt(x.T.dot(Ai[a].dot(x)))
+        p_t[a] = np.dot(theta_hat.T, x) + alpha * np.sqrt(x.T.dot(Ai[a].dot(x)))
 
     # line 11: choose the best one according to the UCB approach
     at = max(p_t, key=p_t.get)
