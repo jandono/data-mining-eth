@@ -104,15 +104,15 @@ def update(reward):
     # declare the global variables changed in this function
     global A0, A0i, b0, A, Ai, B, b
 
+    # TODO(ccruceru): or maybe we shouldn't ignore the '-1' update calls, but
+    # change them to 0?
+    # reward = max(reward, 0)
+
     # ignore non-matching lines
     # TODO(ccruceru): *&*@#?! in the description they say that the line is
     # discarded, why do they call us with a negative reward?
     if reward < 0:
         return
-
-    # TODO(ccruceru): or maybe we shouldn't ignore the '-1' update calls, but
-    # change them to 0? comment the one from above if this is uncommented!
-    # reward = max(reward, 0)
 
     # NOTE: this is experimental: try to see what happens if we penalize more
     # for mistakes; this only works if the first option from above is used
