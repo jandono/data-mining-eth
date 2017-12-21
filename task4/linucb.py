@@ -22,7 +22,16 @@ DELTA = 0.01
 #   ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
 #
 # but in practice it is tuned on its own.
-ALPHA = 0.1
+#
+# Some results on the _online_ data set:
+#   * 0.1: 0.0601379310345
+#   * 0.3: 0.0652978252921
+#   * 0.5: 0.0638841043307
+#   * derived from DELTA = 0.01 (it's ~2.6): 0.0523131991051
+#
+# These value give completely different results on the local data set; for
+# instnace, 0.1 is the best, with CTR = 0.0463.
+ALPHA = 0.3
 # ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
 
 # dimensionality of the `context' (i.e. user features)
