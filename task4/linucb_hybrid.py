@@ -11,11 +11,14 @@ import numpy as np
 # the desired probability threshold which controls how close to the true
 # conditional reward mean we want to be (i.e. E[r_{t,a} | x_{t,a}])
 # NOTE: fine-tune it!
-DELTA = 0.01
+DELTA = 0.05
 
 # constant (based on DELTA) which ensures the confidence bounds are correctly
 # computed by the algorithm
-ALPHA = 1 + np.sqrt(np.log(2 / DELTA) / 2)
+# NOTE: it might make more sense to fine-tune directly this one, instead of
+# DELTA
+# ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
+ALPHA = 0.4
 
 # dimensionality of the `context' (i.e. user features)
 # it also happens to be the dimensionality of the article features, so we are
@@ -56,8 +59,6 @@ z = None
 #
 # NOTE: it is initialized, together with all the following dicts, in the
 # `set_articles' function
-# TODO(ccruceru): index articles from 0 to N and make this a ndarray if somehow
-# we need it
 Z = {}
 
 # the matrix with the same name in the hybrid LinUCB algorithm and its inverse
@@ -102,6 +103,21 @@ def set_articles(articles):
 def update(reward):
     # declare the global variables changed in this function
     global A0, A0i, b0, A, Ai, B, b
+
+    # ignore non-matching lines
+    # TODO(ccruceru): *&*@#?! in the description they say that the line is
+    # discarded, why do they call us with a negative reward?
+    if reward < 0:
+        return
+
+    # TODO(ccruceru): or maybe we shouldn't ignore the '-1' update calls, but
+    # change them to 0? comment the one from above if this is uncommented!
+    # reward = max(reward, 0)
+
+    # NOTE: this is experimental: try to see what happens if we penalize more
+    # for mistakes; this only works if the first option from above is used
+    # if reward == 0:
+    #     reward = -1
 
     # lines 17-23 from Algorithm 2
     # TODO(ccruceru): cache the repeated matrix multiplications

@@ -47,6 +47,10 @@ def evaluate(policy, input_generator):
     impressions = 0.0
     n_lines = 0.0
     for line in input_generator:
+        if n_lines % 5000 == 0:
+            print('Status: lines processed ({}), impressions ({}), score ({})'
+                    .format(n_lines, impressions, 0 if impressions < 1 else \
+                            score / impressions))
         n_lines += 1
         reward, chosen, calculated = process_line(
             policy, line.strip().split())
