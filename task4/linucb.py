@@ -1,6 +1,6 @@
 from __future__ import division
 
-from numpy.linalg import inv, multi_dot as mult
+from numpy.linalg import inv
 import numpy as np
 
 
@@ -76,13 +76,14 @@ def update(reward):
     # declare the global variables changed in this function
     global A, b
 
-    # TODO(ccruceru): or maybe we shouldn't ignore the '-1' update calls, but
-    # change them to 0? comment the one from above if this is uncommented!
-    # reward = max(reward, 0)
-
     # ignore non-matching lines
     # TODO(ccruceru): *&*@#?! in the description they say that the line is
-    # discarded, why do they call us with a negative reward?
+    # discarded, why do they call us with a negative reward? From the paper:
+    #
+    #   Otherwise, if the policy π selects a different arm from the one that
+    #   was taken by the logging policy, then the event is entirely ignored,
+    #   and the algorithm proceeds to the next event without any other change
+    #   in its state.
     if reward < 0:
         return
 
@@ -115,7 +116,7 @@ def recommend(time, user_features, choices):
         # line 8
         theta_hat = np.dot(Ai[a], b[a])
         # line 9
-        p_t[a] = np.dot(theta_hat.T, x) + ALPHA * np.sqrt(mult([x.T, Ai[a], x]))
+        p_t[a] = np.dot(theta_hat.T, x) + ALPHA * np.sqrt(x.T.dot(Ai[a].dot(x)))
 
     # line 11: choose the best one according to the UCB approach
     at = max(p_t, key=p_t.get)

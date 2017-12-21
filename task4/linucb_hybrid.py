@@ -104,13 +104,14 @@ def update(reward):
     # declare the global variables changed in this function
     global A0, A0i, b0, A, Ai, B, b
 
-    # TODO(ccruceru): or maybe we shouldn't ignore the '-1' update calls, but
-    # change them to 0?
-    # reward = max(reward, 0)
-
     # ignore non-matching lines
     # TODO(ccruceru): *&*@#?! in the description they say that the line is
-    # discarded, why do they call us with a negative reward?
+    # discarded, why do they call us with a negative reward? From the paper:
+    #
+    #   Otherwise, if the policy π selects a different arm from the one that
+    #   was taken by the logging policy, then the event is entirely ignored,
+    #   and the algorithm proceeds to the next event without any other change
+    #   in its state.
     if reward < 0:
         return
 
@@ -178,13 +179,14 @@ def recommend(time, user_features, choices):
         # cache various repeated matrix multiplications
         zt_T__A0i = np.dot(Z_t[a].T, A0i)
         B_T__Ai = np.dot(B[a].T, Ai[a])
+        B_T__Ai__x = np.dot(B_T__Ai, x)
         x_T__Ai = np.dot(x.T, Ai[a])
 
         # compute each term separately, for clarity
         term1 = np.dot(zt_T__A0i, Z_t[a])
-        term2 = -2 * zt_T__A0i.dot(B_T__Ai).dot(x)
+        term2 = -2 * zt_T__A0i.dot(B_T__Ai__x)
         term3 = x_T__Ai.dot(x)
-        term4 = x_T__Ai.dot(B[a]).dot(A0i).dot(B_T__Ai).dot(x)
+        term4 = x_T__Ai.dot(B[a]).dot(A0i).dot(B_T__Ai__x)
 
         # finally, add them up to get s_ta
         s_ta = term1 + term2 + term3 + term4
