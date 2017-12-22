@@ -35,6 +35,7 @@ DELTA = 0.01
 #
 # These value give completely different results on the local data set; for
 # instnace, 0.1 is the best, with CTR = 0.0463.
+# ALPHA = 0.1
 ALPHA = 0.2
 # ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
 
@@ -134,8 +135,8 @@ def recommend(time, user_features, choices):
 
     # compute ALPHA for this recommendation round
     # TODO(ccruceru): this is an attempt to make it decay in time
-    # alpha = ALPHA * (1 + 1 / ts_to_time[time])
-    alpha = ALPHA
+    alpha = ALPHA * (1 + 2 / ts_to_time[time])
+    # alpha = ALPHA
 
     # line 2: observing the features
     # NOTE: in the algorithm we have such an x for each articles; in our
