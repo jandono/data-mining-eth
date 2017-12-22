@@ -159,7 +159,7 @@ def recommend(time, user_features, choices):
     global x, at, z
 
     # line 4: observing the features
-    # NOTE: in the algorithm we have such an x for each articles; in our
+    # NOTE: in the algorithm we have such an x for each article; in our
     # specific case, however, it is the same for all of them: the user features
     x = np.asarray(user_features)
     # but we do have different client/article feature vectors

@@ -24,14 +24,18 @@ DELTA = 0.01
 # but in practice it is tuned on its own.
 #
 # Some results on the _online_ data set:
-#   * 0.1: 0.0601379310345
-#   * 0.3: 0.0652978252921
-#   * 0.5: 0.0638841043307
+#   * 0.1:  0.0601379310345
+#   * 0.15: 0.064856235487
+#   * 0.2:  0.0658229480017
+#   * 0.25: 0.0658113668316 (also with reward set to -1 when it is 0)
+#   * 0.3:  0.0652978252921
+#   * 0.4:  0.0643042207167
+#   * 0.5:  0.0638841043307
 #   * derived from DELTA = 0.01 (it's ~2.6): 0.0523131991051
 #
 # These value give completely different results on the local data set; for
 # instnace, 0.1 is the best, with CTR = 0.0463.
-ALPHA = 0.3
+ALPHA = 0.2
 # ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
 
 # dimensionality of the `context' (i.e. user features)
@@ -112,7 +116,6 @@ def update(reward):
     #     reward = -1
 
     # lines 12-13 from Algorithm 1
-    # TODO(ccruceru): cache the repeated matrix multiplications
     A[at] += np.outer(x, x.T)
     Ai[at] = inv(A[at])
     b[at] += reward * x
