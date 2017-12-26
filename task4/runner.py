@@ -42,15 +42,21 @@ def process_line(policy, logline):
     return reward, chosen, policy.recommend(time, user_features, articles)
 
 
-def evaluate(policy, input_generator):
+def evaluate(policy, input_generator, a, f):
+    f.write('Starting evaluation of Alpha: {}\n'.format(a))
+    print('Starting evaluation of Alpha: {}'.format(a))
+
     score = 0.0
     impressions = 0.0
     n_lines = 0.0
+    max_score = -1
     for line in input_generator:
-        if n_lines % 5000 == 0:
-            print('Status: lines processed ({}), impressions ({}), score ({})'
-                    .format(n_lines, impressions, 0 if impressions < 1 else \
-                            score / impressions))
+        # KEEP TRACK OF BEST SCORE
+
+        # if n_lines % 5000 == 0:
+        #     print('Status: lines processed ({}), impressions ({}), score ({})'
+        #             .format(n_lines, impressions, 0 if impressions < 1 else \
+        #                     score / impressions))
         n_lines += 1
         reward, chosen, calculated = process_line(
             policy, line.strip().split())
@@ -60,6 +66,13 @@ def evaluate(policy, input_generator):
             impressions += 1
         else:
             policy.update(-1)
+
+        if impressions > 0:
+            max_score = max(max_score, score / impressions)
+
+    f.write('\tAlpha: {}, max_score: {}, final_score: {}\n'.format(a, max_score, score / impressions))
+    print('Alpha: {}, max_score: {}, final_score: {}'.format(a, max_score, score / impressions))
+
     if impressions < 1:
         logger.info("No impressions were made.")
         return 0.0
@@ -76,15 +89,17 @@ def import_from_file(f):
     return mod
 
 
-def run(source, log_file, articles_file):
+def run(source, log_file, articles_file, a, f):
     policy = import_from_file(source)
     articles_np = np.loadtxt(articles_file)
     articles = {}
     for art in articles_np:
         articles[int(art[0])] = [float(x) for x in art[1:]]
-    policy.set_articles(articles)
+
+    # INITIALISE ALPHA IN SET ARTICLES
+    policy.set_articles(articles, a)
     with io.open(log_file, 'rb', buffering=1024*1024*512) as inf:
-        return evaluate(policy, inf)
+        return evaluate(policy, inf, a, f)
 
 
 if __name__ == "__main__":
@@ -102,4 +117,12 @@ if __name__ == "__main__":
     args = parser.parse_args()
     with open(args.source_file, "r") as fin:
         source = fin.read()
-    run(source, args.log_file, args.articles_file)
+
+    # SEARCH FOR BEST ALPHA
+    f = open('Different alphas with decaying.txt', 'w')
+
+    # USING A STEP OF 0.005 from 0.1 to 0.3
+    for alpha in np.linspace(0.1, 0.3, 41):
+        run(source, args.log_file, args.articles_file, alpha, f)
+
+    f.close()

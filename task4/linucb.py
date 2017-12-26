@@ -36,7 +36,19 @@ DELTA = 0.01
 # These value give completely different results on the local data set; for
 # instnace, 0.1 is the best, with CTR = 0.0463.
 # ALPHA = 0.1
-ALPHA = 0.2
+#
+# Some results on the large local data set for different alpha
+#
+#   * 0.1:      0.06003
+#   * 0.15:     0.06003
+#   * 0.2:      0.06807
+#   * 0.3:      0.06696
+#
+#
+#
+#
+# ALPHA = 0.15
+ALPHA = None
 # ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
 
 # dimensionality of the `context' (i.e. user features)
@@ -83,9 +95,11 @@ b = {}
 ## Interface functions
 ##########################################
 
-def set_articles(articles):
+def set_articles(articles, a):
     # declare the global variables changed in this function
-    global Z, A, B, b
+    global Z, A, B, b, ALPHA
+
+    ALPHA = a
 
     for article, features in articles.items():
         # initialize all the articles-indexed data structures defines above
@@ -98,7 +112,7 @@ def set_articles(articles):
 
 def update(reward):
     # declare the global variables changed in this function
-    global A, b
+    global A, b, x
 
     # ignore non-matching lines
     # TODO(ccruceru): *&*@#?! in the description they say that the line is
