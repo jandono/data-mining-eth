@@ -11,7 +11,7 @@ import numpy as np
 # the desired probability threshold which controls how close to the true
 # conditional reward mean we want to be (i.e. E[r_{t,a} | x_{t,a}])
 # NOTE: fine-tune it!
-DELTA = 0.01
+DELTA = 0.35
 
 # constant which controls the exploration/exploitation ratio
 #
@@ -48,8 +48,9 @@ DELTA = 0.01
 #
 #
 # ALPHA = 0.15
-ALPHA = 0.195
-# ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
+# ALPHA = 0.195
+ALPHA = 1.0 + np.sqrt(np.log(2.0 / DELTA) / 2.0)
+print(ALPHA)
 
 # dimensionality of the `context' (i.e. user features)
 # it also happens to be the dimensionality of the article features, so we are

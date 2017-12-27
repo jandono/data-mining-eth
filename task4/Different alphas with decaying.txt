@@ -1,0 +1,82 @@
+Starting evaluation of Alpha: 0.1
+	Alpha: 0.1, max_score: 0.0605169998727, final_score: 0.0600337126394
+Starting evaluation of Alpha: 0.105
+	Alpha: 0.105, max_score: 0.0690424498315, final_score: 0.0667127976941
+Starting evaluation of Alpha: 0.11
+	Alpha: 0.11, max_score: 0.0669667253628, final_score: 0.0629916171203
+Starting evaluation of Alpha: 0.115
+	Alpha: 0.115, max_score: 0.0710266588218, final_score: 0.0680036798528
+Starting evaluation of Alpha: 0.12
+	Alpha: 0.12, max_score: 0.0714770930645, final_score: 0.0694928244597
+Starting evaluation of Alpha: 0.125
+	Alpha: 0.125, max_score: 0.0720506378559, final_score: 0.0689271741369
+Starting evaluation of Alpha: 0.13
+	Alpha: 0.13, max_score: 0.0678233060643, final_score: 0.0657565279599
+Starting evaluation of Alpha: 0.135
+	Alpha: 0.135, max_score: 0.0674435943983, final_score: 0.0661558380523
+Starting evaluation of Alpha: 0.14
+	Alpha: 0.14, max_score: 0.0707954036711, final_score: 0.0683662122647
+Starting evaluation of Alpha: 0.145
+	Alpha: 0.145, max_score: 0.0711134859144, final_score: 0.06811529402
+Starting evaluation of Alpha: 0.15
+	Alpha: 0.15, max_score: 0.068557650206, final_score: 0.0662953234635
+Starting evaluation of Alpha: 0.155
+	Alpha: 0.155, max_score: 0.0710219786012, final_score: 0.0691113786484
+Starting evaluation of Alpha: 0.16
+	Alpha: 0.16, max_score: 0.0720599504033, final_score: 0.0686991213708
+Starting evaluation of Alpha: 0.165
+	Alpha: 0.165, max_score: 0.0684517695961, final_score: 0.0667758680355
+Starting evaluation of Alpha: 0.17
+	Alpha: 0.17, max_score: 0.0703010236202, final_score: 0.0685385202489
+Starting evaluation of Alpha: 0.175
+	Alpha: 0.175, max_score: 0.0710561884534, final_score: 0.0688990393062
+Starting evaluation of Alpha: 0.18
+	Alpha: 0.18, max_score: 0.0694650255542, final_score: 0.0675687561627
+Starting evaluation of Alpha: 0.185
+	Alpha: 0.185, max_score: 0.0716667169083, final_score: 0.0684518171106
+Starting evaluation of Alpha: 0.19
+	Alpha: 0.19, max_score: 0.0705841067777, final_score: 0.0686520274497
+Starting evaluation of Alpha: 0.195
+	Alpha: 0.195, max_score: 0.0730575371974, final_score: 0.0706027253911
+Starting evaluation of Alpha: 0.2
+	Alpha: 0.2, max_score: 0.0713005269225, final_score: 0.0680682254269
+Starting evaluation of Alpha: 0.205
+	Alpha: 0.205, max_score: 0.0705256154358, final_score: 0.0661085222336
+Starting evaluation of Alpha: 0.21
+	Alpha: 0.21, max_score: 0.0692662529856, final_score: 0.0665854780907
+Starting evaluation of Alpha: 0.215
+	Alpha: 0.215, max_score: 0.0721697025594, final_score: 0.0690282742931
+Starting evaluation of Alpha: 0.22
+	Alpha: 0.22, max_score: 0.0715054908283, final_score: 0.0690210535625
+Starting evaluation of Alpha: 0.225
+	Alpha: 0.225, max_score: 0.0704932582767, final_score: 0.0676883186885
+Starting evaluation of Alpha: 0.23
+	Alpha: 0.23, max_score: 0.0720731100896, final_score: 0.0686232176767
+Starting evaluation of Alpha: 0.235
+	Alpha: 0.235, max_score: 0.0642917687493, final_score: 0.0629028196208
+Starting evaluation of Alpha: 0.24
+	Alpha: 0.24, max_score: 0.0712490285603, final_score: 0.0688309516288
+Starting evaluation of Alpha: 0.245
+	Alpha: 0.245, max_score: 0.06850302327, final_score: 0.0663169586604
+Starting evaluation of Alpha: 0.25
+	Alpha: 0.25, max_score: 0.0714373066246, final_score: 0.0688721593566
+Starting evaluation of Alpha: 0.255
+	Alpha: 0.255, max_score: 0.0713762721792, final_score: 0.0686258972686
+Starting evaluation of Alpha: 0.26
+	Alpha: 0.26, max_score: 0.0701364238977, final_score: 0.0678000121363
+Starting evaluation of Alpha: 0.265
+	Alpha: 0.265, max_score: 0.0707063283542, final_score: 0.0683290276686
+Starting evaluation of Alpha: 0.27
+	Alpha: 0.27, max_score: 0.0683585504781, final_score: 0.0666863174443
+Starting evaluation of Alpha: 0.275
+	Alpha: 0.275, max_score: 0.0704176904177, final_score: 0.0681944092322
+Starting evaluation of Alpha: 0.28
+	Alpha: 0.28, max_score: 0.0708370422665, final_score: 0.0685796889227
+Starting evaluation of Alpha: 0.285
+	Alpha: 0.285, max_score: 0.0687446259673, final_score: 0.0660770836754
+Starting evaluation of Alpha: 0.29
+	Alpha: 0.29, max_score: 0.0668796657553, final_score: 0.065690791173
+Starting evaluation of Alpha: 0.295
+	Alpha: 0.295, max_score: 0.0688456018547, final_score: 0.0663360256512
+Starting evaluation of Alpha: 0.3
+	Alpha: 0.3, max_score: 0.0685835146982, final_score: 0.0669616851758
