@@ -133,7 +133,7 @@ def update(reward):
     # lines 12-13 from Algorithm 1
     A[at] += np.outer(x, x.T)
     Ai[at] = inv(A[at])
-    b[at] += reward * x
+    b[at] += reward * 0.01 * last_time * x
 
 
 def recommend(time, user_features, choices):
