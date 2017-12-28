@@ -48,7 +48,6 @@ def evaluate(policy, input_generator):
     impressions = 0.0
     n_lines = 0.0
     for line in input_generator:
-        # KEEP TRACK OF BEST SCORE
 
         if n_lines % 5000 == 0:
             print('Status: lines processed ({}), impressions ({}), score ({})'
@@ -88,7 +87,6 @@ def run(source, log_file, articles_file):
     for art in articles_np:
         articles[int(art[0])] = [float(x) for x in art[1:]]
 
-    # INITIALISE ALPHA IN SET ARTICLES
     policy.set_articles(articles)
     with io.open(log_file, 'rb', buffering=1024*1024*512) as inf:
         return evaluate(policy, inf)
